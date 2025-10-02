@@ -1,15 +1,127 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// ملف: prisma/schema.prisma
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-generator client {
-  provider = "prisma-client-js"
-  output   = "../app/generated/prisma"
+// تعريف مصدر البيانات (Supabase/PostgreSQL)
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL") // يجب إضافته في ملف .env
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+// تعريف أداة توليد الكود (Prisma Client)
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ------------------------------------------------------------------
+// 1. نموذج المستخدم (User) - لإدارة الأدوار والصلاحيات
+// ------------------------------------------------------------------
+enum Role {
+  MANAGER // المدير: صلاحيات كاملة
+  EDITOR  // المحرر: CRUD (ما عدا حذف العملاء)
+  VIEWER  // المشاهد: قراءة فقط
+}
+
+model User {
+  // يفضل استخدام uuid ليتوافق مع Supabase Auth UUID
+  id String @id @default(uuid())
+  email        String    @unique
+  name         String?
+  role         Role      @default(VIEWER) // حقل الدور أساسي لتطبيق الصلاحيات
+  
+  // العلاقات: من يمكنه إنشاء/تحديث سجلات
+  invoices     Invoice[]
+  
+  // حقول خاصة بإدارة السجلات (Audit/Tracking)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ------------------------------------------------------------------
+// 2. نموذج العميل (Customer)
+// ------------------------------------------------------------------
+model Customer {
+  id           Int        @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  phone        String?    
+  address      String?
+  
+  // علاقة واحد لمتعدد: العميل يمكن أن يكون لديه العديد من الفواتير والتوصيات
+  invoices     Invoice[]
+  recommendations Recommendation[]
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// ------------------------------------------------------------------
+// 3. نموذج المنتج (Product)
+// ------------------------------------------------------------------
+model Product {
+  id           Int        @id @default(autoincrement())
+  name         String     @unique
+  description  String?
+  price        Float      // سعر المنتج
+  stock        Int        @default(0) // كمية المخزون
+  
+  // علاقة متعدد لمتعدد عبر نموذج InvoiceItem
+  invoiceItems InvoiceItem[] 
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// ------------------------------------------------------------------
+// 4. نموذج الفاتورة (Invoice)
+// ------------------------------------------------------------------
+model Invoice {
+  id           Int        @id @default(autoincrement())
+  invoiceNumber String    @unique // رقم الفاتورة المميز
+  issueDate    DateTime   @default(now())
+  dueDate      DateTime?  
+  totalAmount  Float      
+  status       String     @default("Pending") // حالة الفاتورة: Pending, Paid, Draft
+  
+  // العلاقات
+  customerId   Int        // ربط الفاتورة بالعميل
+  customer     Customer   @relation(fields: [customerId], references: [id])
+
+  userId       String      // من قام بإنشاء الفاتورة (للتتبع)
+  user         User       @relation(fields: [userId], references: [id])
+
+  // العناصر داخل الفاتورة (InvoiceItem)
+  items        InvoiceItem[] 
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// نموذج وسيط: عناصر الفاتورة (لربط الفاتورة بالمنتجات)
+model InvoiceItem {
+  invoiceId   Int
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  
+  productId   Int
+  product     Product @relation(fields: [productId], references: [id])
+  
+  quantity    Int
+  unitPrice   Float
+  
+  @@id([invoiceId, productId]) // مفتاح مركب
+}
+
+// ------------------------------------------------------------------
+// 5. نموذج التوصيات (Recommendation)
+// ------------------------------------------------------------------
+model Recommendation {
+  id           Int        @id @default(autoincrement())
+  source       String     // مصدر التوصية (مثال: Friend, Social Media, Google)
+  details      String?    // تفاصيل عن التوصية
+  status       String     @default("New") // حالة التوصية: New, Contacted, Converted
+  
+  // العميل الذي قام بالتوصية
+  customerId   Int
+  customer     Customer   @relation(fields: [customerId], references: [id])
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
