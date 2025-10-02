@@ -63,6 +63,7 @@ CREATE TABLE `InvoiceItem` (
     `productId` INTEGER NOT NULL,
     `quantity` INTEGER NOT NULL,
     `unitPrice` DOUBLE NOT NULL,
+    `total` DOUBLE NOT NULL,
 
     PRIMARY KEY (`invoiceId`, `productId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -81,15 +82,12 @@ CREATE TABLE `Recommendation` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Output_Input` (
+CREATE TABLE `Expense` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `itemName` VARCHAR(191) NOT NULL,
-    `type` VARCHAR(191) NOT NULL,
-    `quantity` INTEGER NOT NULL,
-    `unitPrice` DOUBLE NOT NULL,
-    `total` DOUBLE NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
+    `description` VARCHAR(191) NOT NULL,
+    `amount` DOUBLE NOT NULL,
+    `item` VARCHAR(191) NOT NULL,
+    `date` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
