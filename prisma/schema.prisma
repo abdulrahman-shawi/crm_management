@@ -66,6 +66,8 @@ model Product {
   // علاقة متعدد لمتعدد عبر نموذج InvoiceItem
   invoiceItems InvoiceItem[] 
   
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id])
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
@@ -124,4 +126,21 @@ model Recommendation {
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+}
+model Output_Input {
+  id        Int      @id @default(autoincrement())
+  itemName  String   // اسم المنتج
+  type      String   // "input" للشراء أو "output" للبيع
+  quantity  Int
+  unitPrice Float
+  total     Float    // quantity * unitPrice
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  description String?
+  Product Product[]
 }
