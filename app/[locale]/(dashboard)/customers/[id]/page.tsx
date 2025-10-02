@@ -2,7 +2,7 @@
 import React from "react";
 
 const SingleCustomerPage = () => {
-  return <div>SingleCustomerPage</div>;
+  return <div>Single Customer Page</div>;
 };
 
 export default SingleCustomerPage;
